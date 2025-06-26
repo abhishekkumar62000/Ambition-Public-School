@@ -1,0 +1,12 @@
+streamlit
+pandas
+openpyxl
+yagmail
+keyring
+requests
+qrcode
+Pillow
+scikit-learn
+plotly
+seaborn
+matplotlib
