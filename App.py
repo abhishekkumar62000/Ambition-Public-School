@@ -12,6 +12,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import smtplib
 from email.message import EmailMessage
+import base64
 
 # --- Email sending function using smtplib ---
 def send_email(to, subject, body):
@@ -20,6 +21,28 @@ def send_email(to, subject, body):
     msg['From'] = st.secrets["email"]["user"]
     msg['To'] = to
     msg.set_content(body)
+
+    with smtplib.SMTP_SSL('smtp.gmail.com', 465) as smtp:
+        smtp.login(st.secrets["email"]["user"], st.secrets["email"]["password"])
+        smtp.send_message(msg)
+
+# --- Email sending function with QR code attachment ---
+def send_email_with_qr(to, subject, body, qr_base64):
+    import base64
+    msg = EmailMessage()
+    msg['Subject'] = subject
+    msg['From'] = st.secrets["email"]["user"]
+    msg['To'] = to
+    msg.set_content(body)
+
+    # Extract base64 part if data URL
+    if qr_base64.startswith("data:image"):
+        qr_base64 = qr_base64.split(",", 1)[-1]
+    try:
+        img_bytes = base64.b64decode(qr_base64)
+        msg.add_attachment(img_bytes, maintype='image', subtype='png', filename='payment_qr.png')
+    except Exception as e:
+        print(f"Failed to attach QR image: {e}")
 
     with smtplib.SMTP_SSL('smtp.gmail.com', 465) as smtp:
         smtp.login(st.secrets["email"]["user"], st.secrets["email"]["password"])
@@ -510,11 +533,21 @@ Sincerely,
                             sms_status = ""
                             sms_error = ""
                             try:
-                                send_email(
-                                    to=row["Email"],
-                                    subject=subject,
-                                    body=body
-                                )
+                                # Send email with QR code attachment if available
+                                qr_base64 = row.get("Payment QR", None)
+                                if qr_base64:
+                                    send_email_with_qr(
+                                        to=row["Email"],
+                                        subject=subject,
+                                        body=body,
+                                        qr_base64=qr_base64
+                                    )
+                                else:
+                                    send_email(
+                                        to=row["Email"],
+                                        subject=subject,
+                                        body=body
+                                    )
                                 success_count += 1
                             except Exception as e:
                                 status = "Failed"
