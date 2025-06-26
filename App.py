@@ -131,7 +131,7 @@ st.markdown(
             <img src="https://img.icons8.com/color/96/000000/school-building.png" width="60" style="margin-right: 18px; animation: bounce 1.5s infinite alternate;">
             <div>
                 <h1 style="margin-bottom: 0; color: #2E86C1; font-family: 'Segoe UI', sans-serif; letter-spacing: 1px;">
-                    Ambition Public School
+                    Ambition Public School of Excellence
                 </h1>
                 <span style="font-size: 1.2em; color: #117A65; font-weight: bold;">
                     📧 Fee Warning & AI Automation Dashboard
