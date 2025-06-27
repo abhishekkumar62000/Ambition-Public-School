@@ -10,3 +10,5 @@ scikit-learn
 plotly
 seaborn
 matplotlib
+fpdf
+requests
