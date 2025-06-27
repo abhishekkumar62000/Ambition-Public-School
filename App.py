@@ -1,15 +1,15 @@
-import streamlit as st
+import streamlit as st # type: ignore
 import pandas as pd
 import plotly.express as px
 from datetime import datetime
 import io
-import requests
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import LabelEncoder
+import requests # type: ignore
+from sklearn.ensemble import RandomForestClassifier # type: ignore
+from sklearn.model_selection import train_test_split # type: ignore
+from sklearn.preprocessing import LabelEncoder # type: ignore
 import os
-import seaborn as sns
-import matplotlib.pyplot as plt
+import seaborn as sns # type: ignore
+import matplotlib.pyplot as plt # type: ignore
 import smtplib
 from email.message import EmailMessage
 import base64
@@ -51,68 +51,159 @@ def send_email_with_qr(to, subject, body, qr_base64):
 # ---------- PAGE CONFIG ----------
 st.set_page_config(
     page_title="Fee Warning Automation",
-    layout="centered",
+    layout="wide",  # Use wide layout for better mobile experience
     page_icon=":school:"
 )
 
-# Enhanced Custom CSS for a more interactive and modern UI
+# Add viewport meta tag for mobile scaling
+st.markdown(
+    """
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    """,
+    unsafe_allow_html=True
+)
+
+# Enhanced Custom CSS for a more interactive, colorful, and modern dark UI
 st.markdown(
     """
     <style>
-    body {
-        background: linear-gradient(120deg, #e3f0ff 0%, #f9f9f9 100%);
+    html, body {
+        max-width: 100vw;
+        overflow-x: hidden;
+        background: linear-gradient(120deg, #181c2f 0%, #232946 100%) !important;
+        color: #f4f4f4 !important;
     }
-    .main {
-        background-color: #ffffffee;
+    .main, .dark-main {
+        background: linear-gradient(120deg, #232946 0%, #181c2f 100%) !important;
         border-radius: 22px;
-        box-shadow: 0 6px 32px rgba(44, 62, 80, 0.13);
+        box-shadow: 0 6px 32px rgba(20, 30, 60, 0.25);
         padding: 2.7rem 2.2rem 2.2rem 2.2rem;
         margin-top: 1.7rem;
         animation: fadeIn 1.2s;
+        max-width: 100vw;
+        box-sizing: border-box;
+        border: 2.5px solid #232946;
     }
     .stButton>button {
-        background: linear-gradient(90deg, #2E86C1 60%, #117A65 100%);
-        color: white;
-        border-radius: 10px;
+        background: linear-gradient(90deg, #F7CA18 0%, #2E86C1 60%, #117A65 100%);
+        color: #181c2f;
+        border-radius: 12px;
         font-weight: bold;
         font-size: 1.13em;
         padding: 0.7em 2.2em;
         border: none;
         transition: 0.2s;
-        box-shadow: 0 2px 8px #2e86c13a;
+        box-shadow: 0 2px 12px #2e86c13a;
+        width: 100%;
+        max-width: 350px;
+        letter-spacing: 1.2px;
     }
     .stButton>button:hover {
-        background: linear-gradient(90deg, #117A65 60%, #2E86C1 100%);
-        color: #fff;
-        transform: scale(1.06);
-        box-shadow: 0 4px 16px #117a653a;
-    }
-    .stFileUploader {
-        background: #eaf6fb;
-        border-radius: 12px;
-        padding: 1.2em;
-        border: 2.5px dashed #2E86C1;
-        margin-bottom: 1em;
-    }
-    .stAlert {
-        border-radius: 12px;
+        filter: brightness(1.1) drop-shadow(0 0 10px #F7CA18cc);
+        background: linear-gradient(90deg, #117A65 0%, #F7CA18 100%);
+        color: #232946;
     }
     .stDataFrame, .stTable {
-        background: #f8fbff;
-        border-radius: 10px;
-        box-shadow: 0 2px 8px #2e86c11a;
+        background: #232946cc !important;
+        border-radius: 12px;
+        box-shadow: 0 2px 12px #2e86c13a;
+        color: #F7CA18 !important;
+        font-size: 1.05em;
     }
     .stMetric {
-        background: #eaf6fb;
-        border-radius: 12px;
-        padding: 0.7em 0.5em;
+        background: linear-gradient(90deg, #2E86C1 0%, #117A65 100%);
+        border-radius: 14px;
+        padding: 0.9em 0.7em;
         margin: 0.3em;
-        box-shadow: 0 2px 8px #2e86c11a;
+        box-shadow: 0 2px 12px #117A6588;
+        color: #fff !important;
+        font-weight: 700;
+        font-size: 1.1em;
+        letter-spacing: 1.1px;
     }
     .stExpanderHeader {
         font-size: 1.1em;
-        color: #2E86C1;
+        color: #F7CA18;
         font-weight: bold;
+    }
+    .stFileUploader {
+        background: #232946cc !important;
+        border-radius: 10px;
+        color: #F7CA18 !important;
+        padding: 0.7em;
+        box-shadow: 0 2px 8px #2e86c13a;
+    }
+    .stTextInput>div>input, .stTextArea>div>textarea, .stNumberInput>div>input {
+        background: #181c2f !important;
+        color: #F7CA18 !important;
+        border-radius: 8px;
+        border: 1.5px solid #2E86C1;
+        font-weight: 600;
+    }
+    .stTextInput>div>input:focus, .stTextArea>div>textarea:focus, .stNumberInput>div>input:focus {
+        border: 2px solid #F7CA18;
+        outline: none;
+    }
+    .stDownloadButton>button {
+        background: linear-gradient(90deg, #F7CA18 0%, #2E86C1 100%);
+        color: #181c2f;
+        border-radius: 10px;
+        font-weight: bold;
+        font-size: 1.1em;
+        border: none;
+        box-shadow: 0 2px 8px #F7CA1844;
+        margin-top: 0.5em;
+    }
+    .stDownloadButton>button:hover {
+        filter: brightness(1.1) drop-shadow(0 0 10px #2E86C1cc);
+        background: linear-gradient(90deg, #117A65 0%, #F7CA18 100%);
+        color: #232946;
+    }
+    .stCheckbox>label {
+        color: #F7CA18 !important;
+        font-weight: 600;
+    }
+    .stSlider>div>div>div>div {
+        background: #2E86C1 !important;
+    }
+    .stSlider>div>div>div>div>div {
+        background: #F7CA18 !important;
+    }
+    .stSelectbox>div>div>div>div {
+        background: #232946 !important;
+        color: #F7CA18 !important;
+        border-radius: 8px;
+    }
+    .stSelectbox>div>div>div>div>div {
+        color: #F7CA18 !important;
+    }
+    .stDataEditor {
+        background: #181c2f !important;
+        color: #F7CA18 !important;
+        border-radius: 10px;
+        font-size: 1.05em;
+    }
+    .stDataEditor thead tr {
+        background: #2E86C1 !important;
+        color: #fff !important;
+    }
+    .stDataEditor tbody tr {
+        background: #232946cc !important;
+        color: #F7CA18 !important;
+    }
+    .stInfo {
+        background: linear-gradient(90deg, #117A65 0%, #2E86C1 100%) !important;
+        color: #fff !important;
+        border-radius: 10px;
+        font-weight: 600;
+        font-size: 1.1em;
+        box-shadow: 0 2px 8px #117A6588;
+    }
+    @media (max-width: 600px) {
+        .main, .dark-main { padding: 1.2rem 0.5rem 1.2rem 0.5rem; }
+        .stMetric { font-size: 0.95em; }
+        .stButton>button { font-size: 1em; padding: 0.6em 1em; }
+        .stDataFrame, .stTable { font-size: 0.95em; }
     }
     @keyframes fadeIn {
         from { opacity: 0; transform: translateY(30px);}
@@ -123,25 +214,160 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# Animated, interactive header with subtle hover and animation
+# Animated, interactive header with unique, modern, and even more engaging title styling (DARK THEME)
 st.markdown(
     """
-    <div class="main">
-        <div style="display: flex; align-items: center; justify-content: center; margin-bottom: -10px;">
-            <img src="https://img.icons8.com/color/96/000000/school-building.png" width="60" style="margin-right: 18px; animation: bounce 1.5s infinite alternate;">
-            <div>
-                <h1 style="margin-bottom: 0; color: #2E86C1; font-family: 'Segoe UI', sans-serif; letter-spacing: 1px;">
-                    Ambition Public School of Excellence
+    <div class="main dark-main">
+        <div class="title-flex">
+            <img src="https://img.icons8.com/color/96/000000/school-building.png" class="title-icon left" width="70">
+            <div class="title-center">
+                <h1 class="school-title-unique">
+                    <span class="shine">Ambition Public School of Excellence</span>
+                    <span class="sparkle">✨</span>
                 </h1>
-                <span style="font-size: 1.2em; color: #117A65; font-weight: bold;">
-                    📧 Fee Warning & AI Automation Dashboard
+                <span class="school-subtitle">
+                    <span class="subtitle-anim">📧 Fee Warning & AI Automation Dashboard</span>
                 </span>
             </div>
-            <img src="https://img.icons8.com/color/96/000000/artificial-intelligence.png" width="60" style="margin-left: 18px; animation: pulse 2s infinite;">
+            <img src="https://img.icons8.com/color/96/000000/artificial-intelligence.png" class="title-icon right" width="70">
         </div>
-        <hr style="margin-top: 10px; margin-bottom: 0;">
+        <div class="ribbon">Empowering Education with AI</div>
+        <hr class="title-hr">
     </div>
     <style>
+    @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@900&family=Pacifico&display=swap');
+    html, body, .main, .dark-main {
+        background: linear-gradient(120deg, #1a2233 0%, #232946 100%) !important;
+        color: #f4f4f4 !important;
+    }
+    .dark-main {
+        background: linear-gradient(120deg, #232946 0%, #1a2233 100%) !important;
+        border-radius: 22px;
+        box-shadow: 0 6px 32px rgba(20, 30, 60, 0.25);
+        padding: 2.7rem 2.2rem 2.2rem 2.2rem;
+        margin-top: 1.7rem;
+        animation: fadeIn 1.2s;
+        max-width: 100vw;
+        box-sizing: border-box;
+        border: 2.5px solid #232946;
+    }
+    .title-flex {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: -10px;
+        gap: 18px;
+        flex-wrap: wrap;
+    }
+    .title-icon {
+        animation: bounce 1.5s infinite alternate;
+        filter: drop-shadow(0 2px 8px #23294699);
+        transition: transform 0.3s;
+    }
+    .title-icon.right {
+        animation: pulse 2s infinite;
+    }
+    .title-center {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        min-width: 260px;
+    }
+    .school-title-unique {
+        font-family: 'Montserrat', 'Segoe UI', 'Arial', sans-serif;
+        font-size: 2.9em;
+        font-weight: 900;
+        background: linear-gradient(90deg, #F7CA18 0%, #2E86C1 40%, #117A65 80%, #F7CA18 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        text-fill-color: transparent;
+        letter-spacing: 2.5px;
+        text-shadow: 0 4px 24px #232946cc, 0 1px 0 #fff, 0 0 8px #F7CA18aa;
+        position: relative;
+        margin-bottom: 0.2em;
+        animation: titleSlideIn 1.2s cubic-bezier(.4,0,.2,1);
+        cursor: pointer;
+        transition: text-shadow 0.3s, filter 0.3s;
+        display: flex;
+        align-items: center;
+        gap: 0.2em;
+    }
+    .school-title-unique .shine {
+        background: linear-gradient(90deg, #F7CA18 0%, #2E86C1 50%, #117A65 100%);
+        background-size: 200% auto;
+        color: #fff;
+        background-clip: text;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        animation: shineMove 3s linear infinite;
+        filter: drop-shadow(0 0 8px #F7CA18cc);
+    }
+    .school-title-unique .sparkle {
+        font-family: 'Pacifico', cursive;
+        font-size: 0.7em;
+        color: #F7CA18;
+        animation: sparkleTwinkle 1.5s infinite alternate;
+        margin-left: 0.2em;
+        filter: drop-shadow(0 0 8px #F7CA18cc);
+    }
+    .school-title-unique:hover {
+        filter: brightness(1.18) drop-shadow(0 0 22px #F7CA18cc);
+        text-shadow: 0 10px 36px #117A6588, 0 1px 0 #fff, 0 0 20px #F7CA18cc;
+    }
+    .school-subtitle {
+        font-size: 1.3em;
+        color: #F7CA18;
+        font-weight: 700;
+        margin-top: 0.2em;
+        letter-spacing: 1.2px;
+        text-shadow: 0 1px 0 #232946, 0 0 6px #2e86c13a;
+        display: block;
+    }
+    .subtitle-anim {
+        display: inline-block;
+        animation: subtitleFadeIn 2s cubic-bezier(.4,0,.2,1);
+    }
+    .ribbon {
+        display: inline-block;
+        background: linear-gradient(90deg, #232946 0%, #117A65 100%);
+        color: #F7CA18;
+        font-family: 'Pacifico', cursive;
+        font-size: 1.1em;
+        padding: 0.2em 1.2em;
+        border-radius: 18px;
+        margin: 0.7em auto 0.2em auto;
+        box-shadow: 0 2px 12px #23294699;
+        letter-spacing: 1.5px;
+        animation: ribbonPop 1.2s cubic-bezier(.4,0,.2,1);
+        text-align: center;
+        border: 1.5px solid #F7CA18;
+    }
+    .title-hr {
+        margin-top: 10px;
+        margin-bottom: 0;
+        border: none;
+        border-top: 2.5px dashed #F7CA18;
+        width: 80%;
+        opacity: 0.7;
+        animation: hrGrow 1.2s cubic-bezier(.4,0,.2,1);
+    }
+    @keyframes titleSlideIn {
+        from { opacity: 0; transform: translateY(-40px) scale(0.95); }
+        to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    @keyframes shineMove {
+        0% { background-position: 0% 50%; }
+        100% { background-position: 200% 50%; }
+    }
+    @keyframes subtitleFadeIn {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes hrGrow {
+        from { width: 0; opacity: 0; }
+        to { width: 80%; opacity: 0.7; }
+    }
     @keyframes bounce {
         0% { transform: translateY(0);}
         100% { transform: translateY(-10px);}
@@ -150,6 +376,22 @@ st.markdown(
         0% { filter: brightness(1);}
         50% { filter: brightness(1.3);}
         100% { filter: brightness(1);}
+    }
+    @keyframes sparkleTwinkle {
+        0% { opacity: 1; filter: blur(0px); }
+        100% { opacity: 0.5; filter: blur(2px); }
+    }
+    @keyframes ribbonPop {
+        from { opacity: 0; transform: scale(0.7); }
+        to { opacity: 1; transform: scale(1); }
+    }
+    @media (max-width: 600px) {
+        .school-title-unique { font-size: 1.2em; }
+        .school-subtitle { font-size: 0.95em; }
+        .title-flex { gap: 8px; }
+        .title-icon { width: 36px !important; }
+        .ribbon { font-size: 0.9em; padding: 0.15em 0.7em; }
+        .dark-main { padding: 1.2rem 0.5rem 1.2rem 0.5rem; }
     }
     </style>
     """,
@@ -166,11 +408,15 @@ st.info(
 # Path to QR code image
 QR_IMAGE_PATH = os.path.join(os.getcwd(), "QR Pay.png")
 
-# ---------- STEP 1: Upload Excel ----------
-uploaded_file = st.file_uploader("📂 **Upload Excel File**", type=["xlsx"])
+# ---------- STEP 1: Upload Excel or CSV ----------
+uploaded_file = st.file_uploader("📂 **Upload Student Data File (Excel or CSV)**", type=["xlsx", "csv"])
+df = None
 if uploaded_file:
     with st.spinner("Processing your data..."):
-        df = pd.read_excel(uploaded_file)
+        if uploaded_file.name.endswith(".csv"):
+            df = pd.read_csv(uploaded_file)
+        else:
+            df = pd.read_excel(uploaded_file)
         st.success("File uploaded and data loaded successfully!")
 
     df.columns = df.columns.str.strip()
@@ -362,12 +608,144 @@ if uploaded_file:
         # ---------- 5. 📧 Dynamic Email Personalization with Templates ----------
         st.header("📧 Email Template Selection & Preview")
 
-        # Define templates
-        def get_email_templates():
-            return {
-                "Standard Reminder": (
-                    "Urgent: Fee Due Reminder for {student_name}",
-                    """Dear Parent/Guardian,
+        # Add language selector
+        language = st.selectbox("Choose Language", ["English", "Hindi", "Marathi", "Maithili"])
+
+        def get_email_templates(language):
+            if language == "Maithili":
+                return {
+                    "Standard Reminder": (
+                        "जरूरी: {student_name} लेल फीस बकाया सूचना",
+                        """आदरणीय अभिभावक,
+
+अहाँक बच्चा **{student_name}** (कक्षा **{student_class}**) केर स्कूल फीस अबधि तक जमा नै भेल अछि।
+
+🧾 **बकाया राशि**: ₹{due_amount}
+
+कृपया शीघ्र फीस जमा करू। धन्यवाद。
+**Ambition Public School**
+"""
+                    ),
+                    "Junior Student Friendly": (
+                        "फीस स्मरण: {student_name} (जूनियर सेक्शन)",
+                        """प्रिय अभिभावक,
+
+आशा अछि जे अहाँक बच्चा, **{student_name}** (कक्षा **{student_class}**), स्कूल में पढ़ाई के आनंद ल' रहल छथि!
+
+हमर रिकॉर्ड अनुसार, **₹{due_amount}** के बकाया राशि अछि। कृपया शीघ्र फीस जमा करू ताकि स्कूल गतिविधि में बाधा नै आबय।
+
+अहाँक त्वरित ध्यान लेल धन्यवाद।
+
+सादर,  
+**Ambition Public School**
+"""
+                    ),
+                    "Senior Section Strict": (
+                        "अंतिम सूचना: {student_name} लेल फीस बकाया (सीनियर सेक्शन)",
+                        """प्रिय अभिभावक,
+
+ई अंतिम सूचना अछि जे **{student_name}** (कक्षा **{student_class}**) केर फीस बकाया अछि।
+
+🧾 **बकाया राशि**: ₹{due_amount}
+
+कृपया तुरंत फीस जमा करू, अन्यथा अगिला कार्रवाई कएल जा सकैत अछि। यदि अहाँ फीस जमा क' चुकल छी, त' कृपया ई सूचना नजरअंदाज करू।
+
+सादर,  
+**Ambition Public School**
+"""
+                    ),
+                }
+            elif language == "Hindi":
+                return {
+                    "Standard Reminder": (
+                        "महत्वपूर्ण: {student_name} के लिए शुल्क बकाया सूचना",
+                        """आदरणीय अभिभावक,
+
+आपके बच्चे **{student_name}** (कक्षा **{student_class}**) की स्कूल फीस अभी बकाया है।
+
+🧾 **बकाया राशि**: ₹{due_amount}
+
+कृपया शीघ्र भुगतान करें। धन्यवाद।
+**Ambition Public School**
+"""
+                    ),
+                    "Junior Student Friendly": (
+                        "शुल्क याददाश्त: {student_name} (जूनियर सेक्शन)",
+                        """प्रिय अभिभावक,
+
+हमें आशा है कि आपका बच्चा, **{student_name}** (कक्षा **{student_class}**), हमारे साथ अपनी सीखने की यात्रा का आनंद ले रहा है!
+
+हमारे रिकॉर्ड के अनुसार, **₹{due_amount}** की एक बकाया राशि है। कृपया सुनिश्चित करें कि शुल्क जल्द से जल्द भरा जाए ताकि स्कूल गतिविधियों में कोई रुकावट न आए।
+
+आपकी त्वरित ध्यान देने के लिए धन्यवाद।
+
+सादर,  
+**Ambition Public School**
+"""
+                    ),
+                    "Senior Section Strict": (
+                        "अंतिम सूचना: {student_name} के लिए शुल्क बकाया (सीनियर सेक्शन)",
+                        """प्रिय अभिभावक/अभिभाविका,
+
+यह **{student_name}** (कक्षा **{student_class}**) के लिए बकाया शुल्क के संबंध में अंतिम अनुस्मारक है।
+
+🧾 **बकाया राशि**: ₹{due_amount}
+
+कृपया ध्यान दें कि तत्काल भुगतान आवश्यक है अन्यथा आगे की कार्रवाई की जा सकती है। यदि आपने पहले ही भुगतान कर दिया है, तो कृपया इस सूचना को नजरअंदाज करें।
+
+सादर,  
+**Ambition Public School**
+"""
+                    ),
+                }
+            elif language == "Marathi":
+                return {
+                    "Standard Reminder": (
+                        "{student_name} साठी शुल्क थकबाकीची सूचना",
+                        """आदरणीय पालक,
+
+आपल्या मुलाचे **{student_name}** (इयत्ता **{student_class}**) शाळेचे शुल्क थकबाकी आहे.
+
+🧾 **थकबाकी रक्कम**: ₹{due_amount}
+
+कृपया लवकरात लवकर शुल्क भरा. धन्यवाद.
+**Ambition Public School**
+"""
+                    ),
+                    "Junior Student Friendly": (
+                        "शुल्क याददाश्त: {student_name} (जूनियर सेक्शन)",
+                        """प्रिय पालक,
+
+आपल्या लहानग्या मित्रा/मित्रिणीचा, **{student_name}** (इयत्ता **{student_class}**), आमच्यासोबत शिकण्याच्या प्रवासाचा आनंद घेत असल्याची आशा आहे!
+
+आमच्या रेकॉर्डनुसार, **₹{due_amount}** ची एक थकबाकी रक्कम आहे. कृपया लवकरात लवकर थकबाकी भरण्यासाठी सुनिश्चित करा जेणेकरून शाळेच्या क्रियाकलापांमध्ये कोणतीही अडचण येऊ नये.
+
+आपल्या त्वरित लक्षासाठी धन्यवाद.
+
+सादर,  
+**Ambition Public School**
+"""
+                    ),
+                    "Senior Section Strict": (
+                        "अंतिम सूचना: {student_name} साठी शुल्क थकबाकी (सीनियर सेक्शन)",
+                        """प्रिय पालक/पालकिणी,
+
+ही **{student_name}** (इयत्ता **{student_class}**) साठी थकबाकी शुल्काबद्दलची अंतिम सूचना आहे.
+
+🧾 **बकाया रक्कम**: ₹{due_amount}
+
+कृपया तात्काळ भुगतान आवश्यक आहे अन्यथा पुढील कारवाई केली जाईल. जर आपण आधीच भुगतान केले असेल, तर कृपया या सूचनेकडे दुर्लक्ष करा.
+
+सादर,  
+**Ambition Public School**
+"""
+                    ),
+                }
+            else:
+                return {
+                    "Standard Reminder": (
+                        "Urgent: Fee Due Reminder for {student_name}",
+                        """Dear Parent/Guardian,
 
 This is a reminder that the school fee for your child, **{student_name}**, studying in Class **{student_class}**, is still unpaid.
 
@@ -380,10 +758,10 @@ If you've already paid, kindly ignore this message.
 Warm regards,  
 **Ambition Public School**
 """
-                ),
-                "Junior Student Friendly": (
-                    "Fee Reminder for {student_name} (Junior Section)",
-                    """Dear Parent,
+                    ),
+                    "Junior Student Friendly": (
+                        "Fee Reminder for {student_name} (Junior Section)",
+                        """Dear Parent,
 
 We hope your little one, **{student_name}** (Class **{student_class}**), is enjoying their learning journey with us!
 
@@ -394,10 +772,10 @@ Thank you for your prompt attention.
 Best wishes,  
 **Ambition Public School**
 """
-                ),
-                "Senior Section Strict": (
-                    "Final Notice: Fee Due for {student_name} (Senior Section)",
-                    """Dear Parent/Guardian,
+                    ),
+                    "Senior Section Strict": (
+                        "Final Notice: Fee Due for {student_name} (Senior Section)",
+                        """Dear Parent/Guardian,
 
 This is a final reminder regarding the outstanding fee for **{student_name}** (Class **{student_class}**).
 
@@ -408,10 +786,10 @@ Immediate payment is required to avoid further action. Please disregard this not
 Sincerely,  
 **Ambition Public School**
 """
-                ),
-            }
+                    ),
+                }
 
-        templates = get_email_templates()
+        templates = get_email_templates(language)
         template_names = list(templates.keys())
         selected_template = st.selectbox("Choose Email Template", template_names)
 
@@ -730,6 +1108,71 @@ Sincerely,
             st.write("Added 'Is_High_Due' column (True if dues above average).")
             st.write(df[['Student Name', dues_col, 'Is_High_Due']].head())
 
+    # ---------- Bulk Edit All Student Data ----------
+    st.header("📝 Bulk Edit Student Data (All Columns)")
+    st.markdown("Edit any field below. Changes are session-only unless exported.")
+    edited_bulk_df = st.data_editor(
+        df,
+        num_rows="dynamic",
+        use_container_width=True,
+        key="bulk_edit_all"
+    )
+    df = edited_bulk_df
+
+    # ---------- Export Filtered/Edited Data ----------
+    st.header("⬇️ Export Data (Excel, CSV, PDF)")
+    # Export as Excel
+    excel_buffer = io.BytesIO()
+    with pd.ExcelWriter(excel_buffer, engine="xlsxwriter") as writer:
+        df.to_excel(writer, index=False)
+    st.download_button(
+        label="Download as Excel (.xlsx)",
+        data=excel_buffer.getvalue(),
+        file_name="student_data.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+    # Export as CSV
+    csv_data = df.to_csv(index=False).encode('utf-8')
+    st.download_button(
+        label="Download as CSV",
+        data=csv_data,
+        file_name="student_data.csv",
+        mime="text/csv"
+    )
+    # Export as PDF (simple table)
+    try:
+        from fpdf import FPDF
+        pdf = FPDF()
+        pdf.add_page()
+        pdf.set_font("Arial", size=8)
+        col_width = pdf.w / (len(df.columns) + 1)
+        row_height = pdf.font_size * 1.5
+        # Helper function to clean text for PDF
+        def clean_text_for_pdf(text):
+            if isinstance(text, str):
+                # Replace rupee symbol and remove other non-latin1 chars
+                text = text.replace("₹", "Rs.")
+                return text.encode('latin1', 'replace').decode('latin1')
+            return str(text)
+        # Header
+        for col in df.columns:
+            pdf.cell(col_width, row_height, clean_text_for_pdf(str(col)), border=1)
+        pdf.ln(row_height)
+        # Rows (limit to 30 for performance)
+        for i, row in df.head(30).iterrows():
+            for item in row:
+                pdf.cell(col_width, row_height, clean_text_for_pdf(item), border=1)
+            pdf.ln(row_height)
+        pdf_buffer = pdf.output(dest='S').encode('latin1')
+        st.download_button(
+            label="Download as PDF (first 30 rows)",
+            data=pdf_buffer,
+            file_name="student_data.pdf",
+            mime="application/pdf"
+        )
+    except ImportError:
+        st.info("Install 'fpdf' package to enable PDF export: pip install fpdf")
+
 # Place this function ONCE, before use
 def send_sms_via_fast2sms(phone, message):
     url = "https://www.fast2sms.com/dev/bulkV2"
@@ -756,20 +1199,36 @@ def send_sms_via_fast2sms(phone, message):
 
 
 # ------------------- New Student Admission Data Collection -------------------
-with st.expander("📝 New Student Admission Data Collection (Click to Expand/Collapse)", expanded=False):
+with st.expander("NEW ADMISSION", expanded=False):
+    st.markdown(
+        """
+        <div style="background: linear-gradient(90deg, #232946 0%, #117A65 100%); border-radius: 18px; box-shadow: 0 2px 12px #117A6588; padding: 1.2em 1.5em; margin-bottom: 1.2em; color: #F7CA18;">
+            <b>Register a new student for admission:</b> <br>
+            <span style="color:#fff; font-size:1.05em;">All fields are required. Data is not saved until you click <b>Submit Admission</b>.</span>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
     if "admission_list" not in st.session_state:
         st.session_state.admission_list = []
+    if "admission_approval" not in st.session_state:
+        st.session_state.admission_approval = []
 
     with st.form("admission_form"):
-        st.write("Fill the form below to register a new student for admission:")
-        admission_student_name = st.text_input("Student Name")
-        admission_father_name = st.text_input("Father's Name")
-        admission_mother_name = st.text_input("Mother's Name")
-        admission_address = st.text_area("Address")
-        admission_class = st.text_input("Class")
-        admission_parent_number = st.text_input("Parent's Mobile Number")
-        admission_reg_fee = st.number_input("Registration Fee Payment (₹)", min_value=0, step=1)
-        admission_submitted = st.form_submit_button("Submit Admission")
+        col1, col2 = st.columns(2)
+        with col1:
+            admission_student_name = st.text_input("👦 Student Name", key="admission_student_name")
+            admission_father_name = st.text_input("👨 Father's Name", key="admission_father_name")
+            admission_mother_name = st.text_input("👩 Mother's Name", key="admission_mother_name")
+            admission_class = st.text_input("🏫 Class", key="admission_class")
+        with col2:
+            admission_address = st.text_area("🏠 Address", key="admission_address")
+            admission_parent_number = st.text_input("📱 Parent's Mobile Number", key="admission_parent_number")
+            admission_reg_fee = st.number_input("💸 Registration Fee Payment (₹)", min_value=0, step=1, key="admission_reg_fee")
+        admission_submitted = st.form_submit_button(
+            label="✨ Submit Admission",
+            help="Click to add this student to the admission dashboard."
+        )
         if (
             admission_submitted
             and admission_student_name
@@ -780,7 +1239,8 @@ with st.expander("📝 New Student Admission Data Collection (Click to Expand/Co
             and admission_parent_number
             and admission_reg_fee > 0
         ):
-            st.session_state.admission_list.append({
+            # Add to pending approval list
+            st.session_state.admission_approval.append({
                 "Timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                 "Student Name": admission_student_name,
                 "Father's Name": admission_father_name,
@@ -788,20 +1248,96 @@ with st.expander("📝 New Student Admission Data Collection (Click to Expand/Co
                 "Address": admission_address,
                 "Class": admission_class,
                 "Parent's Mobile Number": admission_parent_number,
-                "Registration Fee Payment (₹)": admission_reg_fee
+                "Registration Fee Payment (₹)": admission_reg_fee,
+                "Status": "Pending",
+                "Admin Comment": ""
             })
-            st.success("Admission data submitted successfully!")
+            st.success("🎉 Admission submitted for approval! Waiting for admin action.")
+        elif admission_submitted:
+            st.error("❌ Please fill all fields and enter a valid registration fee.")
 
-    # Show admission dashboard (admin view)
+    # Admin Approval Workflow
+    st.markdown("<div style='background: linear-gradient(90deg, #117A65 0%, #2E86C1 100%); border-radius: 14px; box-shadow: 0 2px 12px #2e86c13a; padding: 0.7em 1.2em; margin-bottom: 0.7em; color: #fff; font-weight:600; font-size:1.1em;'>🛡️ <b>Admission Approval Dashboard (Admin Only)</b></div>", unsafe_allow_html=True)
+    if st.session_state.admission_approval:
+        approval_df = pd.DataFrame(st.session_state.admission_approval)
+        for idx, row in approval_df[approval_df["Status"]=="Pending"].iterrows():
+            with st.expander(f"Pending: {row['Student Name']} ({row['Class']})", expanded=False):
+                st.write(row)
+                admin_action = st.radio(f"Approve or Reject {row['Student Name']}?", ["Approve", "Reject"], key=f"admin_action_{idx}")
+                admin_comment = st.text_area("Admin Comment (optional)", key=f"admin_comment_{idx}")
+                if st.button(f"Submit Decision for {row['Student Name']}", key=f"decision_{idx}"):
+                    st.session_state.admission_approval[idx]["Status"] = "Approved" if admin_action=="Approve" else "Rejected"
+                    st.session_state.admission_approval[idx]["Admin Comment"] = admin_comment
+                    if admin_action=="Approve":
+                        st.session_state.admission_list.append(st.session_state.admission_approval[idx])
+                    st.success(f"{row['Student Name']} has been {admin_action.lower()}d.")
+
+    # Show admission dashboard (approved only)
     if st.session_state.admission_list:
-        st.subheader("📋 New Admission Dashboard")
+        st.markdown(
+            """
+            <div style="background: linear-gradient(90deg, #117A65 0%, #2E86C1 100%); border-radius: 14px; box-shadow: 0 2px 12px #2e86c13a; padding: 0.7em 1.2em; margin-bottom: 0.7em; color: #fff; font-weight:600; font-size:1.1em;">
+                📋 <b>New Admission Dashboard (Approved)</b>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
         admission_df = pd.DataFrame(st.session_state.admission_list)
-        st.dataframe(admission_df)
+        st.dataframe(admission_df, use_container_width=True, hide_index=True)
         csv_admission = admission_df.to_csv(index=False)
         st.download_button(
-            "Download Admission Data as CSV",
+            "⬇️ Download Admission Data as CSV",
             csv_admission,
             "new_admissions.csv",
             "text/csv",
             key="download-admission-csv"
         )
+
+# --- Automated Fee Receipt Generation ---
+def clean_text_for_pdf(text):
+    if isinstance(text, str):
+        # Replace rupee symbol and other non-latin1 chars
+        text = text.replace("₹", "Rs.")
+        return text.encode('latin1', 'replace').decode('latin1')
+    return str(text)
+
+def generate_fee_receipt_pdf(student_row):
+    from fpdf import FPDF
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Arial", size=12)
+    pdf.cell(200, 10, txt=clean_text_for_pdf("Ambition Public School - Fee Receipt"), ln=True, align="C")
+    pdf.ln(10)
+    for k, v in student_row.items():
+        pdf.cell(0, 10, txt=clean_text_for_pdf(f"{k}: {v}"), ln=True)
+    pdf.ln(10)
+    pdf.cell(0, 10, txt=clean_text_for_pdf("Thank you for your payment!"), ln=True)
+    return pdf.output(dest='S').encode('latin1')
+
+# Show/download receipts from dashboard
+if df is not None and 'Payment Link' in df.columns and 'Email' in df.columns:
+    with st.expander("Download Fee Receipts", expanded=False):
+        st.header("Download Fee Receipts")
+        for idx, row in df.iterrows():
+            if row.get('Payment Link') and row.get('Email'):
+                if st.button(f"Generate Receipt for {row['Student Name']}", key=f"receipt_{idx}"):
+                    pdf_bytes = generate_fee_receipt_pdf(row)
+                    st.download_button(
+                        label=f"Download PDF Receipt for {row['Student Name']}",
+                        data=pdf_bytes,
+                        file_name=f"fee_receipt_{row['Student Name'].replace(' ','_')}.pdf",
+                        mime="application/pdf",
+                        key=f"download_receipt_{idx}"
+                    )
+
+# Email PDF receipt after payment (simulate after sending email)
+def send_email_with_receipt(to, subject, body, pdf_bytes):
+    msg = EmailMessage()
+    msg['Subject'] = subject
+    msg['From'] = st.secrets["email"]["user"]
+    msg['To'] = to
+    msg.set_content(body)
+    msg.add_attachment(pdf_bytes, maintype='application', subtype='pdf', filename='fee_receipt.pdf')
+    with smtplib.SMTP_SSL('smtp.gmail.com', 465) as smtp:
+        smtp.login(st.secrets["email"]["user"], st.secrets["email"]["password"])
+        smtp.send_message(msg)
